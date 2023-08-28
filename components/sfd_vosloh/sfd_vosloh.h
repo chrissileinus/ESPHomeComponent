@@ -149,12 +149,9 @@ namespace esphome
 
           int rest_of_line = this->line_length - (this->cursor_position % this->line_length);
 
-          if (rest_of_line < word.length())
+          if (rest_of_line < word.length() && !this->next_line())
           {
-            if (!this->next_line())
-            {
-              break;
-            }
+            break;
           }
 
           bool nl = false;
