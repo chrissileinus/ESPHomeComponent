@@ -87,6 +87,8 @@ namespace esphome
       void setup() override
       {
         this->roll();
+        delay(2000);
+        this->write_string("ready");
       }
 
       void dump_config() override

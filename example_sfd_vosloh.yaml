@@ -1,0 +1,109 @@
+esphome:
+  name: example_sfd_vosloh
+  friendly_name: Example SFD vosloh
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+external_components:
+  source: github://chrissileinus/ESPHomeComponent
+
+# Enable logging
+logger:
+  baud_rate: 0
+# Enable Home Assistant API
+api:
+  reboot_timeout: 0s
+
+ota:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "example_sfd_vosloh"
+
+captive_portal:
+
+# Example configuration entry
+web_server:
+  port: 80
+
+uart: # The SFD Modules ar seting together on uart and only work with this setings.
+  id: uart_bus
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 4800
+  parity: EVEN
+  stop_bits: 2
+
+sfd_vosloh:
+  id: sfd
+  line_length: 25
+
+time:
+  - id: my_time
+    platform: sntp
+    timezone: Europe/Berlin
+
+    on_time:
+      - seconds: 0
+        minutes: /1
+        then:
+          - lambda: |-
+              std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
+              id(sfd).write_string(text);
+    on_time_sync:
+      then:
+        - logger.log: "time_sync"
+        - lambda: |-
+            std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
+            id(sfd).write_string(text);
+
+select:
+  - platform: template
+    id: text
+    name: "Text"
+    optimistic: true
+    options:
+      - "Dieser Text dient zum test der Anzeige.\n Der Zeilenumbruch sollte auch funktionieren."
+      - "Dies ist ein Text zum testen der Anzeige. \nDer Zeilenumbruch sollte auch funktionieren."
+      - "Dies ist ein Text zum testen der Anzeige; \n Der Zeilenumbruch sollte auch funktionieren."
+    on_value:
+      then:
+        - lambda: |-
+            id(sfd).write_text(x);
+
+button:
+  - platform: restart
+    name: "Restart"
+
+  - platform: template
+    name: "test pattern"
+    on_press:
+      - lambda: |-
+          id(sfd).testpattern();
+
+  - platform: template
+    name: "go blank"
+    on_press:
+      - lambda: |-
+          id(sfd).blank();
+
+  - platform: template
+    name: "roll up"
+    on_press:
+      - lambda: |-
+          id(sfd).roll();
+
+  - platform: template
+    id: show_time
+    name: "show time"
+    on_press:
+      - lambda: |-
+          std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
+          id(sfd).write_string(text);
