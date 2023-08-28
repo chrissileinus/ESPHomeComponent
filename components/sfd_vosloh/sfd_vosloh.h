@@ -35,6 +35,20 @@ namespace esphome
         this->last_char_position = 0;
       }
 
+      bool next_line()
+      {
+        int new_position = this->line_length * (1 + ceil(this->cursor_position / this->line_length));
+        if (new_position < this->MAX_ADDRESS)
+        {
+          this->cursor_position = new_position;
+          ESP_LOGD(TAG, "[next_line] cursor position: %3d", this->cursor_position);
+          return true;
+        }
+        ESP_LOGD(TAG, "[next_line]: reached MAX_ADDRESS");
+        return false;
+      }
+
+    public:
       bool write_char_at(char c, int pos)
       {
         if (pos <= this->MAX_ADDRESS)
@@ -69,20 +83,6 @@ namespace esphome
         }
       }
 
-      bool next_line()
-      {
-        int new_position = this->line_length * (1 + ceil(this->cursor_position / this->line_length));
-        if (new_position < this->MAX_ADDRESS)
-        {
-          this->cursor_position = new_position;
-          ESP_LOGD(TAG, "[next_line] cursor position: %3d", this->cursor_position);
-          return true;
-        }
-        ESP_LOGD(TAG, "[next_line]: reached MAX_ADDRESS");
-        return false;
-      }
-
-    public:
       void set_line_length(uint8_t length) { this->line_length = length; }
 
       void setup() override
@@ -122,13 +122,6 @@ namespace esphome
       void blank()
       {
         this->clear();
-        this->adapt();
-      }
-
-      void write_string(std::string str)
-      {
-        this->clear();
-        this->write_string(str);
         this->adapt();
       }
 
