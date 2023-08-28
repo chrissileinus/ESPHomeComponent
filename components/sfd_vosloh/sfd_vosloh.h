@@ -49,7 +49,7 @@ namespace esphome
       }
 
     public:
-      bool write_char_at(char c, int pos)
+      bool write_char(char c, int pos)
       {
         if (pos <= this->MAX_ADDRESS)
         {
@@ -59,13 +59,13 @@ namespace esphome
           delay(5);
           return true;
         }
-        ESP_LOGD(TAG, "[write_char_at]: reached MAX_ADDRESS");
+        ESP_LOGD(TAG, "[write_char]: reached MAX_ADDRESS");
         return false;
       }
 
       bool write_char(char c)
       {
-        if (!this->write_char_at(c, this->cursor_position + 1))
+        if (!this->write_char(c, this->cursor_position + 1))
           return false;
         if (!this->cursor_increment())
           return false;
@@ -114,7 +114,7 @@ namespace esphome
       {
         for (int i = 0; i < last_char_position; i++)
         {
-          this->write_char_at(' ', i + 1);
+          this->write_char(' ', i + 1);
         }
         this->cursor_reset();
       }
