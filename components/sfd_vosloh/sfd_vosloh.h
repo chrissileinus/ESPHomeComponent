@@ -14,22 +14,28 @@ namespace esphome
     protected:
       const int MAX_ADDRESS = 127;
 
-      int line_length = MAX_ADDRESS;
+      int line_length = this->MAX_ADDRESS;
       int cursor_position = 127;
       int last_char_position = 127;
       
-      bool _cursor_increment()
+      bool cursor_increment()
       {
         if (this->cursor_position < this->MAX_ADDRESS)
         {
           this->cursor_position++;
           return true;
         }
-        ESP_LOGD(TAG, "[_cursor_increment]: reached MAX_ADDRESS");
+        ESP_LOGD(TAG, "[cursor_increment]: reached MAX_ADDRESS");
         return false;
       }
 
-      bool _write_char_at(char c, int pos)
+      void cursor_reset()
+      {
+        this->cursor_position = 0;
+        this->last_char_position = 0;
+      }
+
+      bool write_char_at(char c, int pos)
       {
         if (pos <= this->MAX_ADDRESS)
         {
@@ -39,40 +45,40 @@ namespace esphome
           delay(5);
           return true;
         }
-        ESP_LOGD(TAG, "[_write_char_at]: reached MAX_ADDRESS");
+        ESP_LOGD(TAG, "[write_char_at]: reached MAX_ADDRESS");
         return false;
       }
 
-      bool _write_char(char c)
+      bool write_char(char c)
       {
-        if (!this->_write_char_at(c, this->cursor_position + 1))
+        if (!this->write_char_at(c, this->cursor_position + 1))
           return false;
-        if (!this->_cursor_increment())
+        if (!this->cursor_increment())
           return false;
         this->last_char_position = (this->last_char_position < this->cursor_position) ? this->cursor_position : this->last_char_position;
         return true;
       }
 
-      void _write_string(std::string str)
+      void write_string(std::string str)
       {
-        ESP_LOGD(TAG, "[_write_string] at pos: %3d; string: \"%s\"", this->cursor_position, str.c_str());
+        ESP_LOGD(TAG, "[write_string] at pos: %3d; string: \"%s\"", this->cursor_position, str.c_str());
         for (int i = 0; i < str.length(); i++)
         {
-          if (!this->_write_char(str[i]))
+          if (!this->write_char(str[i]))
             break;
         }
       }
 
-      bool _next_line()
+      bool next_line()
       {
         int new_position = this->line_length * (1 + ceil(this->cursor_position / this->line_length));
         if (new_position < this->MAX_ADDRESS)
         {
           this->cursor_position = new_position;
-          ESP_LOGD(TAG, "[_next_line] cursor position: %3d", this->cursor_position);
+          ESP_LOGD(TAG, "[next_line] cursor position: %3d", this->cursor_position);
           return true;
         }
-        ESP_LOGD(TAG, "[_next_line]: reached MAX_ADDRESS");
+        ESP_LOGD(TAG, "[next_line]: reached MAX_ADDRESS");
         return false;
       }
 
@@ -96,8 +102,7 @@ namespace esphome
       void roll()
       {
         this->write_byte(0x82);
-        cursor_position = 0;
-        last_char_position = 0;
+        this->cursor_reset();
       }
 
       void adapt()
@@ -109,10 +114,9 @@ namespace esphome
       {
         for (int i = 0; i < last_char_position; i++)
         {
-          this->_write_char_at(' ', i + 1);
+          this->write_char_at(' ', i + 1);
         }
-        cursor_position = 0;
-        last_char_position = 0;
+        this->cursor_reset();
       }
 
       void blank()
@@ -124,7 +128,7 @@ namespace esphome
       void write_string(std::string str)
       {
         this->clear();
-        this->_write_string(str);
+        this->write_string(str);
         this->adapt();
       }
 
@@ -147,7 +151,7 @@ namespace esphome
 
           if (rest_of_line < word.length())
           {
-            if (!this->_next_line())
+            if (!this->next_line())
             {
               break;
             }
@@ -158,7 +162,7 @@ namespace esphome
           {
             if (pos == 0)
             {
-              this->_next_line();
+              this->next_line();
               nl = false;
             }
             else
@@ -166,12 +170,12 @@ namespace esphome
             word.erase(pos, 1);
           }
 
-          this->_write_string(word);
+          this->write_string(word);
 
           if (nl)
-            this->_next_line();
+            this->next_line();
           else
-            this->_cursor_increment();
+            this->cursor_increment();
         }
 
         this->adapt();
@@ -182,7 +186,7 @@ namespace esphome
         this->clear();
         for (int i = 0; i < this->MAX_ADDRESS; i++)
         {
-          this->_write_char(48 + ((i + 1) % 10));
+          this->write_char(48 + ((i + 1) % 10));
         }
         this->adapt();
       }
