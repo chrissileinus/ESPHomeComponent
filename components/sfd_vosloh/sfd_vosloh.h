@@ -77,7 +77,7 @@ namespace esphome
       }
 
     public:
-      void setline_length(uint8_t length) { this->line_length = length; }
+      void set_line_length(uint8_t length) { this->line_length = length; }
 
       void setup() override
       {
