@@ -12,7 +12,7 @@ external_components:
 
 # Enable logging
 logger:
-  baud_rate: 0
+
 # Enable Home Assistant API
 api:
   reboot_timeout: 0s
@@ -34,16 +34,25 @@ web_server:
   port: 80
 
 uart: # The SFD Modules ar seting together on uart and only work with this setings.
-  id: uart_bus
-  tx_pin: 1
-  rx_pin: 3
-  baud_rate: 4800
-  parity: EVEN
-  stop_bits: 2
+  - id: uart_main
+    tx_pin: 1
+    rx_pin: 3
+    baud_rate: 115200
+  - id: uart_bus
+    tx_pin: 17
+    rx_pin: 16
+    baud_rate: 4800
+    parity: EVEN
+    stop_bits: 2
 
 sfd_vosloh:
   id: sfd
-  line_length: 25
+  uart_id: uart_bus
+  row_length: 25
+  current_content:
+    name: current content
+  last_module:
+    name: last module
 
 time:
   - id: my_time
@@ -56,13 +65,13 @@ time:
         then:
           - lambda: |-
               std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
-              id(sfd).write_string(text);
+              id(sfd).set_content(text, sfd_vosloh::ALIGN_CENTER, 2);
     on_time_sync:
       then:
         - logger.log: "time_sync"
         - lambda: |-
             std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
-            id(sfd).write_string(text);
+            id(sfd).set_content(text, sfd_vosloh::ALIGN_CENTER, 2);
 
 select:
   - platform: template
@@ -70,29 +79,24 @@ select:
     name: "Text"
     optimistic: true
     options:
+      - ""
       - "Dieser Text dient zum test der Anzeige.\n Der Zeilenumbruch sollte auch funktionieren."
       - "Dies ist ein Text zum testen der Anzeige. \nDer Zeilenumbruch sollte auch funktionieren."
       - "Dies ist ein Text zum testen der Anzeige; \n Der Zeilenumbruch sollte auch funktionieren."
     on_value:
       then:
         - lambda: |-
-            id(sfd).write_text(x);
+            id(sfd).set_content(x, sfd_vosloh::WORD_WRAP | sfd_vosloh::ALIGN_RIGHT);
 
 button:
   - platform: restart
     name: "Restart"
 
   - platform: template
-    name: "test pattern"
-    on_press:
-      - lambda: |-
-          id(sfd).testpattern();
-
-  - platform: template
     name: "go blank"
     on_press:
       - lambda: |-
-          id(sfd).blank();
+          id(sfd).clear();
 
   - platform: template
     name: "roll up"
@@ -106,4 +110,4 @@ button:
     on_press:
       - lambda: |-
           std::string text = id(my_time).now().strftime("%d.%m.%Y %H:%M");
-          id(sfd).write_string(text);
+          id(sfd).set_content(text, sfd_vosloh::ALIGN_CENTER, 2);
