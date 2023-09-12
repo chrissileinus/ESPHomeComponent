@@ -34,10 +34,6 @@ web_server:
   port: 80
 
 uart: # The SFD Modules ar seting together on uart and only work with this setings.
-  - id: uart_main
-    tx_pin: 1
-    rx_pin: 3
-    baud_rate: 115200
   - id: uart_bus
     tx_pin: 17
     rx_pin: 16

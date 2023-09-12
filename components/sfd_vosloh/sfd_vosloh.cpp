@@ -26,6 +26,7 @@ namespace esphome
         this->parent_->write_byte(_WRITE);
         this->parent_->write_byte(position);
         this->parent_->write_byte(character);
+        this->parent_->flush();
 
         // ESP_LOGD(TAG, "[set_character]: pos: %3d; char: %#x '%c'", position, character, character);
         this->current_position = position + 1;
@@ -100,11 +101,11 @@ namespace esphome
         {
         case 0x00:
           ESP_LOGD(TAG, "[get_character] pos: %3d; timeout", pos);
-          str.push_back(' ');
+          str.push_back('_');
           break;
         case 0x10:
           ESP_LOGD(TAG, "[get_character] pos: %3d; char not valid", pos);
-          str.push_back(' ');
+          str.push_back('_');
           break;
         case 0x20 ... 0xFF:
           str.push_back(character);
