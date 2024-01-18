@@ -33,8 +33,11 @@ namespace esphome
 
       int row_length = this->POSITION_MAX;
       int current_position = 1;
+      int blocked = 0;
 
       text_sensor::TextSensor *current_content;
+      text_sensor::TextSensor *current_c_state;
+      text_sensor::TextSensor *current_m_state;
       sensor::Sensor *last_module;
 
       bool set_string(std::string string, uint8_t position);
@@ -45,7 +48,6 @@ namespace esphome
       uint8_t collect_respond();
 
       void update_last_module();
-      void update_current_content();
       void update_current_state();
 
       // helper
@@ -64,6 +66,8 @@ namespace esphome
     public:
       void setup_row_length(uint8_t length) { this->row_length = length; }
       void setup_current_content(text_sensor::TextSensor *sensor) { this->current_content = sensor; }
+      void setup_current_c_state(text_sensor::TextSensor *sensor) { this->current_c_state = sensor; }
+      void setup_current_m_state(text_sensor::TextSensor *sensor) { this->current_m_state = sensor; }
       void setup_last_module(sensor::Sensor *sensor) { this->last_module = sensor; }
 
       void setup() override;
