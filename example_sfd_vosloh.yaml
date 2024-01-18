@@ -47,6 +47,10 @@ sfd_vosloh:
   row_length: 25
   current_content:
     name: current content
+  current_c_state:
+    name: current char state
+  current_m_state:
+    name: current motor state
   last_module:
     name: last module
 
