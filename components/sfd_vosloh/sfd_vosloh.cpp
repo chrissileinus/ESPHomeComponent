@@ -89,7 +89,7 @@ namespace esphome
       this->last_module->publish_state(last_pos);
     }
 
-    void sfdVosloh::update_current_content()
+    void sfdVosloh::update_current_state()
     {
       std::string str = "";
 
@@ -100,11 +100,11 @@ namespace esphome
         switch (character)
         {
         case 0x00:
-          ESP_LOGD(TAG, "[get_character] pos: %3d; timeout", pos);
-          str.push_back('_');
+          // ESP_LOGD(TAG, "[character] pos: %3d; timeout", pos);
+          str.push_back('|');
           break;
         case 0x10:
-          ESP_LOGD(TAG, "[get_character] pos: %3d; char not valid", pos);
+          // ESP_LOGD(TAG, "[character] pos: %3d; char not valid", pos);
           str.push_back('_');
           break;
         case 0x20 ... 0xFF:
@@ -112,21 +112,70 @@ namespace esphome
           break;
 
         default:
-          ESP_LOGD(TAG, "[get_character] pos: %3d; undefined respond: %#x", pos, character);
-          str.push_back(' ');
+          // ESP_LOGD(TAG, "[character] pos: %3d; undefined respond: %#x", pos, character);
+          str.push_back('-');
           break;
         }
       }
 
       this->current_content->publish_state(str);
-    }
 
-    void sfdVosloh::update_current_state()
-    {
+      std::string c_str = "";
+      std::string m_str = "";
+
       for (int pos = 1; pos <= this->last_module->get_state(); pos++)
       {
         uint8_t state = this->get_state(pos);
+        uint8_t c_state = state | 0x0F;
+        uint8_t m_state = state | 0xF0;
+
+        switch (c_state)
+        {
+        case 0xAF:
+          // ESP_LOGD(TAG, "[c_state] pos: %3d; first run", pos);
+          c_str.push_back('f');
+          break;
+        case 0xCF:
+          // ESP_LOGD(TAG, "[c_state] pos: %3d; char unknown", pos);
+          c_str.push_back('u');
+          break;
+        case 0x8F:
+          // ESP_LOGD(TAG, "[c_state] pos: %3d; char known", pos);
+          c_str.push_back('k');
+          break;
+
+        default:
+          c_str.push_back('_');
+          break;
+        }
+
+        switch (m_state)
+        {
+        case 0xF0:
+          // ESP_LOGD(TAG, "[m_state] pos: %3d; at position", pos);
+          m_str.push_back('s');
+          break;
+        case 0xFF:
+          // ESP_LOGD(TAG, "[m_state] pos: %3d; moving", pos);
+          m_str.push_back('m');
+          break;
+        case 0xF4:
+          // ESP_LOGD(TAG, "[m_state] pos: %3d; no supply", pos);
+          m_str.push_back('v');
+          break;
+        case 0xF2:
+          // ESP_LOGD(TAG, "[m_state] pos: %3d; no respond", pos);
+          m_str.push_back('n');
+          break;
+
+        default:
+          c_str.push_back('_');
+          break;
+        }
       }
+
+      this->current_c_state->publish_state(c_str);
+      this->current_m_state->publish_state(m_str);
     }
 
     // public
@@ -145,20 +194,31 @@ namespace esphome
 
     void sfdVosloh::loop()
     {
+      delay_microseconds_safe(1000000);
+      if (this->blocked == 0)
+      {
+        this->update_current_state();
+      }
     }
 
     // methods
     void sfdVosloh::roll()
     {
+      this->blocked++;
+
       ESP_LOGD(TAG, "[roll]:");
       this->parent_->write_byte(_ROLL);
       this->current_position = 1;
 
-      this->update_current_content();
-      this->update_current_state();
+      this->blocked--;
+
+      // this->update_current_content();
+      // this->update_current_state();
     }
     void sfdVosloh::clear(bool adapt)
     {
+      this->blocked++;
+
       for (int pos = 1; pos <= this->last_module->get_state(); pos++)
       {
         this->set_character(' ', pos);
@@ -166,10 +226,14 @@ namespace esphome
       this->current_position = 1;
       if (adapt)
         this->parent_->write_byte(_ADAPT);
+
+      this->blocked--;
     }
 
     void sfdVosloh::set_content(std::string input, uint8_t mode, uint8_t row)
     {
+      this->blocked++;
+
       if (row < 1)
         row = 1;
 
@@ -239,12 +303,15 @@ namespace esphome
       this->set_row(output, mode);
       this->parent_->write_byte(_ADAPT);
 
-      this->update_current_content();
-      this->update_current_state();
+      this->blocked--;
+      // this->update_current_content();
+      // this->update_current_state();
     }
 
     void sfdVosloh::set_row(std::string input, uint8_t mode)
     {
+      this->blocked++;
+
       ESP_LOGD(TAG, "[set_row] input: %s", input.c_str());
 
       if (this->row_length > input.length())
@@ -259,6 +326,8 @@ namespace esphome
       }
 
       this->set_string(input, this->current_position);
+
+      this->blocked--;
     }
   }
 }
