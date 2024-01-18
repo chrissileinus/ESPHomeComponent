@@ -11,12 +11,18 @@ sfdVosloh = sfd_vosloh_ns.class_('sfdVosloh', cg.Component, uart.UARTDevice)
 
 CONF_ROW_LENGTH = "row_length"
 CONF_CURRENT_CONTENT = "current_content"
+CONF_CURRENT_C_STATE = "current_c_state"
+CONF_CURRENT_M_STATE = "current_m_state"
 CONF_LAST_MODULE = "last_module"
 
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(sfdVosloh),
     cv.Optional(CONF_ROW_LENGTH, default=127): cv.int_range(min=1, max=127),
     cv.Optional(CONF_CURRENT_CONTENT):
+        text_sensor.TEXT_SENSOR_SCHEMA,
+    cv.Optional(CONF_CURRENT_C_STATE):
+        text_sensor.TEXT_SENSOR_SCHEMA,
+    cv.Optional(CONF_CURRENT_M_STATE):
         text_sensor.TEXT_SENSOR_SCHEMA,
     cv.Optional(CONF_LAST_MODULE):
         sensor.SENSOR_SCHEMA,
@@ -31,6 +37,14 @@ def to_code(config):
         conf = config[CONF_CURRENT_CONTENT]
         sens = yield text_sensor.new_text_sensor(conf)
         cg.add(var.setup_current_content(sens))
+    if CONF_CURRENT_C_STATE in config:
+        conf = config[CONF_CURRENT_C_STATE]
+        sens = yield text_sensor.new_text_sensor(conf)
+        cg.add(var.setup_current_c_state(sens))
+    if CONF_CURRENT_M_STATE in config:
+        conf = config[CONF_CURRENT_M_STATE]
+        sens = yield text_sensor.new_text_sensor(conf)
+        cg.add(var.setup_current_m_state(sens))
     if CONF_LAST_MODULE in config:
         conf = config[CONF_LAST_MODULE]
         sens = yield sensor.new_sensor(conf)
