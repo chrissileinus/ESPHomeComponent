@@ -26,7 +26,7 @@ namespace esphome
         this->parent_->write_byte(_WRITE);
         this->parent_->write_byte(position);
         this->parent_->write_byte(character);
-        this->parent_->flush();
+        // this->parent_->flush();
 
         // ESP_LOGD(TAG, "[set_character]: pos: %3d; char: %#x '%c'", position, character, character);
         this->current_position = position + 1;
@@ -89,9 +89,10 @@ namespace esphome
       this->last_module->publish_state(last_pos);
     }
 
-    void sfdVosloh::update_current_state()
+    void sfdVosloh::update_current_content()
     {
       std::string str = "";
+      bool rolling = false;
 
       for (int pos = 1; pos <= this->last_module->get_state(); pos++)
       {
@@ -119,7 +120,11 @@ namespace esphome
       }
 
       this->current_content->publish_state(str);
+    }
 
+    void sfdVosloh::update_current_state()
+    {
+      bool rolling = false;
       std::string c_str = "";
       std::string m_str = "";
 
@@ -158,6 +163,7 @@ namespace esphome
         case 0xFF:
           // ESP_LOGD(TAG, "[m_state] pos: %3d; moving", pos);
           m_str.push_back('m');
+          rolling = true;
           break;
         case 0xF4:
           // ESP_LOGD(TAG, "[m_state] pos: %3d; no supply", pos);
@@ -176,6 +182,11 @@ namespace esphome
 
       this->current_c_state->publish_state(c_str);
       this->current_m_state->publish_state(m_str);
+
+      if (!rolling)
+      {
+        this->rolling->publish_state(false);
+      }
     }
 
     // public
@@ -194,10 +205,22 @@ namespace esphome
 
     void sfdVosloh::loop()
     {
-      delay_microseconds_safe(1000000);
-      if (this->blocked == 0)
+      this->loop_counter++;
+
+      int loop_counter_end = 1000;
+
+      if (this->rolling->state == true)
       {
-        this->update_current_state();
+        loop_counter_end = 10;
+      }
+
+      if (this->loop_counter >= loop_counter_end)
+      {
+        this->loop_counter = 0;
+        if (this->blocked == 0)
+        {
+          this->update_current_state();
+        }
       }
     }
 
@@ -207,13 +230,21 @@ namespace esphome
       this->blocked++;
 
       ESP_LOGD(TAG, "[roll]:");
+      this->rolling->publish_state(true);
+      delay_microseconds_safe(1000);
       this->parent_->write_byte(_ROLL);
       this->current_position = 1;
 
       this->blocked--;
 
-      // this->update_current_content();
-      // this->update_current_state();
+      this->update_current_content();
+    }
+    void sfdVosloh::adapt()
+    {
+      this->rolling->publish_state(true);
+      delay_microseconds_safe(1000);
+      this->parent_->write_byte(_ADAPT);
+      this->update_current_content();
     }
     void sfdVosloh::clear(bool adapt)
     {
@@ -225,7 +256,7 @@ namespace esphome
       }
       this->current_position = 1;
       if (adapt)
-        this->parent_->write_byte(_ADAPT);
+        this->adapt();
 
       this->blocked--;
     }
@@ -252,7 +283,7 @@ namespace esphome
         _erase_all(input, '\r');
 
         this->set_string(input);
-        this->parent_->write_byte(_ADAPT);
+        this->adapt();
         return;
       }
 
@@ -301,11 +332,9 @@ namespace esphome
         }
       }
       this->set_row(output, mode);
-      this->parent_->write_byte(_ADAPT);
+      this->adapt();
 
       this->blocked--;
-      // this->update_current_content();
-      // this->update_current_state();
     }
 
     void sfdVosloh::set_row(std::string input, uint8_t mode)
