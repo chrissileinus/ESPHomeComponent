@@ -1,9 +1,9 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart, text_sensor, sensor
+from esphome.components import uart, text_sensor, sensor, binary_sensor
 from esphome.const import CONF_ID
 
-AUTO_LOAD = ["text_sensor", "sensor"]
+AUTO_LOAD = ["text_sensor", "sensor", "binary_sensor"]
 DEPENDENCIES = ['uart']
 
 sfd_vosloh_ns = cg.esphome_ns.namespace('sfd_vosloh')
@@ -14,6 +14,7 @@ CONF_CURRENT_CONTENT = "current_content"
 CONF_CURRENT_C_STATE = "current_c_state"
 CONF_CURRENT_M_STATE = "current_m_state"
 CONF_LAST_MODULE = "last_module"
+CONF_ROLLING = "rolling"
 
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(sfdVosloh),
@@ -26,6 +27,8 @@ CONFIG_SCHEMA = cv.Schema({
         text_sensor.TEXT_SENSOR_SCHEMA,
     cv.Optional(CONF_LAST_MODULE):
         sensor.SENSOR_SCHEMA,
+    cv.Optional(CONF_ROLLING):
+        binary_sensor.BINARY_SENSOR_SCHEMA,
 }).extend(cv.COMPONENT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA)
 
 def to_code(config):
@@ -49,3 +52,7 @@ def to_code(config):
         conf = config[CONF_LAST_MODULE]
         sens = yield sensor.new_sensor(conf)
         cg.add(var.setup_last_module(sens))
+    if CONF_ROLLING in config:
+        conf = config[CONF_ROLLING]
+        sens = yield binary_sensor.new_binary_sensor(conf)
+        cg.add(var.setup_rolling(sens))
