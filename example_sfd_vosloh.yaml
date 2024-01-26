@@ -53,6 +53,8 @@ sfd_vosloh:
     name: current motor state
   last_module:
     name: last module
+  rolling:
+    name: rolling
 
 time:
   - id: my_time
