@@ -100,19 +100,19 @@ namespace esphome
 
         switch (character)
         {
-        case 0x00:
+        case 0x00: // no respond / timeout
           // ESP_LOGD(TAG, "[character] pos: %3d; timeout", pos);
           str.push_back('|');
           break;
-        case 0x10:
+        case 0x10: // char not valid
           // ESP_LOGD(TAG, "[character] pos: %3d; char not valid", pos);
           str.push_back('_');
           break;
-        case 0x20 ... 0xFF:
+        case 0x20 ... 0xFF: // char is valid
           str.push_back(character);
           break;
 
-        default:
+        default: // undefined respond
           // ESP_LOGD(TAG, "[character] pos: %3d; undefined respond: %#x", pos, character);
           str.push_back('-');
           break;
@@ -136,15 +136,15 @@ namespace esphome
 
         switch (c_state)
         {
-        case 0xAF:
+        case 0xAF: // First run
           // ESP_LOGD(TAG, "[c_state] pos: %3d; first run", pos);
           c_str.push_back('f');
           break;
-        case 0xCF:
+        case 0xCF: // Char unknown
           // ESP_LOGD(TAG, "[c_state] pos: %3d; char unknown", pos);
           c_str.push_back('u');
           break;
-        case 0x8F:
+        case 0x8F: // Char known
           // ESP_LOGD(TAG, "[c_state] pos: %3d; char known", pos);
           c_str.push_back('k');
           break;
@@ -156,22 +156,22 @@ namespace esphome
 
         switch (m_state)
         {
-        case 0xF0:
+        case 0xF0: // at position
           // ESP_LOGD(TAG, "[m_state] pos: %3d; at position", pos);
-          m_str.push_back('s');
+          m_str.push_back('p');
           break;
-        case 0xFF:
+        case 0xFF: // moving
           // ESP_LOGD(TAG, "[m_state] pos: %3d; moving", pos);
           m_str.push_back('m');
           rolling = true;
           break;
-        case 0xF4:
+        case 0xF4: // motor power supply failure
           // ESP_LOGD(TAG, "[m_state] pos: %3d; no supply", pos);
-          m_str.push_back('v');
+          m_str.push_back('s');
           break;
-        case 0xF2:
+        case 0xF2: // motor failure, not moving
           // ESP_LOGD(TAG, "[m_state] pos: %3d; no respond", pos);
-          m_str.push_back('n');
+          m_str.push_back('r');
           break;
 
         default:
